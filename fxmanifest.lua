@@ -1,16 +1,8 @@
 fx_version 'cerulean'
 game 'gta5'
 
-description 'Tk-Peyote'
-version '1.0.5'
-
-server_scripts {
-    'server.lua'
-}
-
-shared_scripts {
-    'config.lua',
-}
+description 'DHS-Forcefield'
+version '1.0.0'
 
 client_scripts {
 	'client.lua'
@@ -19,6 +11,5 @@ client_scripts {
 lua54 'yes'
 
 escrow_ignore {
-    'server.lua',
     'client.lua'
   }
