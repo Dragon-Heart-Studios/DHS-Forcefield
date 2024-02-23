@@ -1,4 +1,3 @@
-local QBCore = exports['qb-core']:GetCoreObject()
 -- Forcefield Radius Options
 ForcefieldRadiusOps = {5.0, 10.0, 15.0, 20.0, 50.0}
 -- Default Forcefield Radius
