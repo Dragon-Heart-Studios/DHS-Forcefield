@@ -5,22 +5,22 @@ ForcefieldRadius = 5.0
 local forcefield = false
 
 
-RegisterCommand("ToggleForcefield", function(source,args)
+RegisterCommand("ToggleForcefield", function()
    forcefield = not forcefield
-end)
+end, false)
 
-function ApplyForce(entity)
+local function ApplyForce(entity)
    local pos = GetEntityCoords(PlayerPedId())
    local coord = GetEntityCoords(entity)
    local dx = coord.x - pos.x
    local dy = coord.y - pos.y
    local dz = coord.z - pos.z
    local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
-   local distanceRate = (50 / distance) * math.pow(1.04, 1 - distance)
+   local distanceRate = (50 / distance) * 1.04^(1 - distance)
    ApplyForceToEntity(entity, 1, distanceRate * dx, distanceRate * dy, distanceRate * dz, math.random() * math.random(-1, 1), math.random() * math.random(-1, 1), math.random() * math.random(-1, 1), true, false, true, true, true, true)
 end
 
-function RequestControlOnce(entity)
+local function RequestControlOnce(entity)
    if not NetworkIsInSession or NetworkHasControlOfEntity(entity) then
        return true
    end
@@ -35,30 +35,30 @@ local function EnumerateEntities(initFunc, moveFunc, disposeFunc)
            disposeFunc(iter)
            return
        end
-       
+
        local enum = {handle = iter, destructor = disposeFunc}
        setmetatable(enum, entityEnumerator)
-       
+
        local next = true
        repeat
            coroutine.yield(id)
            next, id = moveFunc(iter)
        until not next
-       
+
        enum.destructor, enum.handle = nil, nil
        disposeFunc(iter)
    end)
 end
 
-function EnumeratePeds()
+local function EnumeratePeds()
    return EnumerateEntities(FindFirstPed, FindNextPed, EndFindPed)
 end
 
-function EnumerateVehicles()
+local function EnumerateVehicles()
    return EnumerateEntities(FindFirstVehicle, FindNextVehicle, EndFindVehicle)
 end
 
-function EnumerateObjects()
+local function EnumerateObjects()
    return EnumerateEntities(FindFirstObject, FindNextObject, EndFindObject)
 end
 
@@ -67,18 +67,18 @@ local function DoForceFieldTick(radius)
    local coords = GetEntityCoords(PlayerPedId())
    local playerVehicle = GetPlayersLastVehicle()
    local inVehicle = IsPedInVehicle(player, playerVehicle, true)
-   
-   DrawMarker(28, coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 0.0, 180.0, 0.0, radius, radius, radius, 180, 80, 0, 35, false, true, 2, nil, nil, false)
-   
+
+   DrawMarker(28, coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 0.0, 180.0, 0.0, radius, radius, radius, 180, 80, 0, 35, false, true, 2, false, nil, false, false)
+
    for k in EnumerateVehicles() do
-       if (not inVehicle or k ~= playerVehicle) and GetDistanceBetweenCoords(coords, GetEntityCoords(k)) <= radius * 2 then
+       if (not inVehicle or k ~= playerVehicle) and #(coords - GetEntityCoords(k)) <= radius * 2 then
            RequestControlOnce(k)
            ApplyForce(k)
        end
    end
-   
+
    for k in EnumeratePeds() do
-       if k ~= PlayerPedId() and GetDistanceBetweenCoords(coords, GetEntityCoords(k)) <= radius * 2 then
+       if k ~= PlayerPedId() and #(coords - GetEntityCoords(k)) <= radius * 2 then
            RequestControlOnce(k)
            SetPedRagdollOnCollision(k, true)
            SetPedRagdollForceFall(k)
@@ -87,7 +87,7 @@ local function DoForceFieldTick(radius)
    end
 
    --Be Careful This One Can & Will Cause Crashing
-   
+
    -- for k in EnumerateObjects() do
    --    if k ~= PlayerPedId() and GetDistanceBetweenCoords(coords, GetEntityCoords(k)) <= radius * 2 then
    --       RequestControlOnce(k)
@@ -97,12 +97,12 @@ local function DoForceFieldTick(radius)
 end
 
 CreateThread(function()
-   local currForcefieldRadiusIndex = 1
-   local selForcefieldRadiusIndex = 1
    while true do
+      local s = 1000
       if forcefield then
+         s = 0
          DoForceFieldTick(ForcefieldRadius)
       end
-      Wait(1)
+      Wait(s)
    end
 end)
